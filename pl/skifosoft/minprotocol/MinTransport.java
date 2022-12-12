@@ -8,6 +8,9 @@ import java.util.HashMap;
 import java.util.TreeSet;
 import java.util.zip.CRC32;
 
+/**
+ * Main class implementing MIN (Microcontroller Interconnect Network) protocol.
+ */
 public class MinTransport {
 
     private static enum State {
@@ -80,6 +83,8 @@ public class MinTransport {
     private final MinSerialInterface serialInterface;
 
     /**
+     * Entry point constructor
+     *
      * @param serialInterface
      */
     public MinTransport(final MinSerialInterface serialInterface) {
@@ -88,7 +93,8 @@ public class MinTransport {
     }
 
     /**
-     *
+     * Sends transport reset request to another end
+     * and resets internal transport state.
      */
     public void transportReset() {
         send_reset();
@@ -99,8 +105,10 @@ public class MinTransport {
     }
 
     /**
-     * @param minId
-     * @param payload
+     * Directly sends non-transport frame. Such frames are not queued nor retransmitted in case of error.
+     *
+     * @param minId user defined id of the frame (must be 0 - 63 range)
+     * @param payload data to send
      * @throws MinIdException
      * @throws PayloadTooLongException
      */
@@ -118,8 +126,11 @@ public class MinTransport {
     }
 
     /**
-     * @param minId
-     * @param payload
+     * Queue transport frame. Such frames can be automatically retransmitted in case of error.
+     * This is normal way of sending frames.
+     *
+     * @param minId user defined id of the frame (must be 0 - 63 range)
+     * @param payload data to send
      * @throws FifoFullException
      * @throws MinIdException
      * @throws PayloadTooLongException
@@ -141,7 +152,11 @@ public class MinTransport {
     }
 
     /**
-     * @return
+     * Drives the engine.
+     * Sends queued frames, receive incoming traffic, retransmits, sends ACK, does stuff.
+     * Must be invoked periodically.
+     *
+     * @return list of received frames
      */
     public ArrayList<MinFrame> poll() {
 

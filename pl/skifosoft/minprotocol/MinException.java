@@ -1,6 +1,8 @@
 package pl.skifosoft.minprotocol;
-
-public class MinException extends Exception {
+/**
+ * Base class for MIN exceptions
+ */
+public abstract class MinException extends Exception {
 
     public MinException(String message) {
         super(message);

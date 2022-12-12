@@ -2,6 +2,10 @@ package pl.skifosoft.minprotocol;
 
 public final class MinFrame {
 
+    /**
+     * Frame
+     * Not ment to be created directly, just received.
+     */
     MinFrame(byte minId, byte[] payload, int seq, boolean transport, boolean ackOrReset) {
 
         if(ackOrReset) {
@@ -16,14 +20,19 @@ public final class MinFrame {
     }
 
     /**
-     * @return
+     * Each frame has it's own minId defined by the sender.
+     * It's meaning is user-defined, can be used to distinguish
+     * different types of frames.
+     * Must be 0 - 63 range.
+     *
+     * @return min-id of the frame
      */
     public int getId() {
         return minId & 0x3f;
     }
 
     /**
-     * @return
+     * @return payload bytes, max payload length is 255
      */
     public byte[] getPayload() {
         return payload;

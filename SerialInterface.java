@@ -9,6 +9,9 @@ public class SerialInterface implements MinSerialInterface {
 
     private SerialPort comPort;
 
+    // for specifics of this implementation see jSerialComm
+    // https://fazecast.github.io/jSerialComm/
+
     public SerialInterface(String ttyName, int baudRate) {
 
         comPort = SerialPort.getCommPort(ttyName);
