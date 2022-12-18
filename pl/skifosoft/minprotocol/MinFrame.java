@@ -38,6 +38,10 @@ public final class MinFrame {
         return payload;
     }
 
+    void setPayload(byte[] p) {
+        payload = p;
+    }
+
     byte minId;
     byte seq;
     public byte[] payload;

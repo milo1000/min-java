@@ -5,14 +5,14 @@ package pl.skifosoft.minprotocol;
 public interface MinSerialInterface {
 
     /**
-     * Write array of bytes to serial port
+     * Write array of bytes to the serial port. Blocking.
      *
      * @param data
      */
     void serialWrite(byte[] data);
 
     /**
-     * Read all available bytes from serial port.
+     * Read all available bytes from serial port. Non blocking.
      *
      * @return array of bytes, should retur 0-length array if no data available.
      */
