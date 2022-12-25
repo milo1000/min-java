@@ -124,7 +124,8 @@ public class MinTransport {
      */
     public void transportReset() {
         send_reset();
-        send_reset();
+
+        serialInterface.serialReadAll(); // flush stale input
 
         transport_fifo_reset();
         rx_reset();
@@ -223,6 +224,7 @@ public class MinTransport {
 
         // # Periodically transmit ACK
         if (currentTimeMillis - last_sent_ack_time_ms > ack_retransmit_timeout_ms) {
+            //System.out.println("send ack delta: "+(currentTimeMillis - last_sent_ack_time_ms)+", rn: "+rn+", r-active: "+remote_active);
             if (remote_active) {
                 send_ack();
             }
@@ -254,7 +256,13 @@ public class MinTransport {
     }
 
     private void transport_fifo_pop() {
-        transport_fifo.remove(0);
+
+        MinFrame popped = transport_fifo.remove(0);
+        // System.out.println("popped: " + popped);
+        // System.out.println("Remaining: " + transport_fifo.size());
+        // for (MinFrame f : transport_fifo) {
+        //     System.out.println(" stalled: " + f);
+        // }
     }
 
     private MinFrame transport_fifo_get(final int index) {
@@ -265,7 +273,10 @@ public class MinTransport {
 
         last_received_anything_ms = System.currentTimeMillis();
 
+        //System.out.println("received anything ctrl<"+Integer.toHexString(min_id_control & 0xff)+"> seq<"+min_seq+">");
+
         if ((min_id_control & 0x80) != 0) {
+
             if (min_id_control == ACK) {
                 final int number_acked = (min_seq - sn_min) & 0xff;
                 final int number_in_window = (sn_max - sn_min) & 0xff;
@@ -291,9 +302,10 @@ public class MinTransport {
                 transport_fifo_reset();
                 rx_reset();
             } else {
-                final MinFrame min_frame = new MinFrame(min_id_control, min_payload, min_seq, true, true);
+                final MinFrame min_frame = new MinFrame(min_id_control, min_payload, min_seq, true, false);
 
                 last_received_frame_ms = System.currentTimeMillis();
+                //System.out.println("received frame: "+min_frame);
 
                 if (min_seq == rn) {
                     rx_list.add(min_frame);
@@ -354,6 +366,11 @@ public class MinTransport {
 
     private void rx_bytes(final byte[] data) {
 
+        // for (final byte b : data) {
+        //     System.out.print((((b & 0xff) > 15) ? " 0x" : " 0x0") + Integer.toHexString(b & 0xff));
+        // }
+        // System.out.println("");
+
         for (final byte b : data) {
             if (rx_header_bytes_seen == 2) {
                 rx_header_bytes_seen = 0;
@@ -381,6 +398,7 @@ public class MinTransport {
                     rx_frame_id_control = b;
                     // rx_payload_bytes = 0;
                     if ((rx_frame_id_control & 0x80) != 0) {
+                        //System.out.println("received id: 0x"+Integer.toHexString(rx_frame_id_control & 0xff));
                         rx_frame_state = State.RECEIVING_SEQ;
                     } else {
                         rx_frame_state = State.RECEIVING_LENGTH;
@@ -390,6 +408,7 @@ public class MinTransport {
                 case RECEIVING_SEQ: {
                     rx_frame_seq = b;
                     rx_frame_state = State.RECEIVING_LENGTH;
+                    //System.out.println("received seq: 0x"+Integer.toHexString(rx_frame_seq & 0xff));
                 }
                     break;
                 case RECEIVING_LENGTH: {
@@ -593,6 +612,8 @@ public class MinTransport {
         final byte[] payload = new byte[] { (byte) (rn & 0xff) };
         final MinFrame ack_frame = new MinFrame(ACK, payload, rn, true, true);
 
+        //System.out.println("sending ack: "+ack_frame);
+
         final byte[] owb = on_wire_bytes(ack_frame);
         last_sent_ack_time_ms = System.currentTimeMillis();
         serialInterface.serialWrite(owb);
@@ -604,6 +625,9 @@ public class MinTransport {
         // # For a NACK we send an ACK but also request some frame retransmits
         final byte[] payload = new byte[] { (byte) (to & 0xff) };
         final MinFrame ack_frame = new MinFrame(ACK, payload, rn, true, true);
+
+        //System.out.println("NACK[to:"+to+"]: "+ack_frame);
+        Thread.dumpStack();
 
         final byte[] owb = on_wire_bytes(ack_frame);
         last_sent_ack_time_ms = System.currentTimeMillis();
